@@ -1,0 +1,70 @@
+version: '3.9'
+services:
+    eureka-server:
+        image: registry-image
+        ports:
+            - 8888:8888
+        networks:
+            - spring-net
+
+    gateway-service:
+        image: gateway
+        depends_on:
+            - eureka-server
+        ports:
+            - 7777:7777
+        environment:
+            profile: "default"
+            eureka.client.serviceUrl.defaultZone: "http://eureka-server:8888/eureka"
+        networks:
+            - spring-net
+
+    db-mysql-formation:
+        image: mysql
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: "${password}"
+            MYSQL_DATABASE: "${formation_bdd}"
+        networks:
+            - spring-net
+
+    ms-formation-service:
+        image: ms-formation
+        depends_on:
+            - eureka-server
+            - gateway-service
+            - db-mysql-formation
+        environment:
+            profile: "default"
+            eureka.client.serviceUrl.defaultZone: "http://eureka-server:8888/eureka"
+            spring.datasource.url: "${url}"
+            spring.datasource.password: "${password}"
+        restart: on-failure
+        networks:
+            - spring-net
+
+    ms-scolarite-service:
+        image: ms-scolarite
+        depends_on:
+            - eureka-server
+            - gateway-service
+        environment:
+            profile: "default"
+            eureka.client.serviceUrl.defaultZone: "http://eureka-server:8888/eureka"
+        networks:
+            - spring-net
+
+    ms-bourse-service:
+        image: ms-bourse
+        depends_on:
+            - eureka-server
+            - gateway-service
+        environment:
+            profile: "default"
+            eureka.client.serviceUrl.defaultZone: "http://eureka-server:8888/eureka"
+        networks:
+            - spring-net
+
+networks:
+    spring-net:
+        driver: bridge
